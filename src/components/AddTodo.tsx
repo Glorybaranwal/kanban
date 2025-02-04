@@ -1,45 +1,34 @@
 import { useState } from "react";
-import { TextField, Button, Grid } from "@mui/material";
-import { addTodo } from "@components/utils/api";
+import { Button, TextField } from "@mui/material";
+import { useTasks } from "@components/context/task"; // Import useTasks hook
+import { Task } from "@components/types/todo";
 
 interface AddTodoProps {
-    onAddTask: (task: { id: number; todo: string; completed: boolean; status: "todo" | "in-progress" | "done" }) => void;
+    onAddTask: (task: Task) => void;  // Define the prop type explicitly
 }
 
-const AddTodo: React.FC<AddTodoProps> = ({ onAddTask }) => {
-    const [newTodo, setNewTodo] = useState("");
+const AddTodo: React.FC<AddTodoProps> = ({ onAddTask }) => { // Use the interface for props
+    const [todoContent, setTodoContent] = useState("");
+    const { addTask } = useTasks(); // Use context to access addTask
 
     const handleAdd = () => {
-        if (newTodo.trim()) {
-            const newTaskObj: any = {
-                id: Date.now(),
-                todo: newTodo,
-                completed: false,
-                status: "todo",
-            };
-
-            onAddTask(newTaskObj);
-            addTodo(newTaskObj);
-            setNewTodo("");
+        if (todoContent.trim()) {
+            const newTask: any = { id: Date.now(), todo: todoContent, completed: false };
+            addTask(newTask); // Add task using context
+            setTodoContent("");
         }
     };
 
     return (
-        <Grid container spacing={2} alignItems="center">
-            <Grid item xs={10}>
-                <TextField
-                    label="New Task"
-                    value={newTodo}
-                    onChange={(e) => setNewTodo(e.target.value)}
-                    fullWidth
-                />
-            </Grid>
-            <Grid item xs={2}>
-                <Button onClick={handleAdd} variant="contained" fullWidth>
-                    Add Task
-                </Button>
-            </Grid>
-        </Grid>
+        <div>
+            <TextField
+                label="New Task"
+                variant="outlined"
+                value={todoContent}
+                onChange={(e) => setTodoContent(e.target.value)}
+            />
+            <Button onClick={handleAdd} variant="contained">Add</Button>
+        </div>
     );
 };
 

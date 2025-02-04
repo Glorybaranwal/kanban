@@ -13,17 +13,12 @@ import {
     Box,
 } from "@mui/material";
 import KanbanColumn from "./Column";
-import { deleteTodo, fetchTodos, updateTodo } from "@components/utils/api";
-import AddTodo from "./AddTodo";
 import { Task } from '../types/todo';
-
-const getStoredTasks = (): Task[] => {
-    const storedTasks = localStorage.getItem("inProgressTasks");
-    return storedTasks ? JSON.parse(storedTasks) : [];
-};
+import { useTasks } from "@components/context/task"; // Import the useTasks hook
+import AddTodo from "./AddTodo";
 
 const KanbanBoard = () => {
-    const [tasks, setTasks] = useState<Task[]>([]);
+    const { tasks, addTask, editTask, deleteTask, updateTaskStatus } = useTasks(); // Use context to access tasks and functions
     const [pagination, setPagination] = useState<{ [key: string]: number }>({
         todo: 0,
         "in-progress": 0,
@@ -32,86 +27,23 @@ const KanbanBoard = () => {
 
     const [pageSize, setPageSize] = useState<number>(5);
 
-    // Fetch tasks dynamically
-    const loadTasks = useCallback(async () => {
-        try {
-            const fetchedTasks = await fetchTodos();
-            const inProgressTasks = getStoredTasks();
-
-            // Merge API tasks with stored in-progress tasks
-            const mergedTasks: any = fetchedTasks.map((task) => {
-                const storedTask = inProgressTasks.find((t) => t.id === task.id);
-                return storedTask ? storedTask : { ...task, status: task.completed ? "done" : "todo" };
-            });
-
-            setTasks(mergedTasks);
-        } catch (error) {
-            console.error("Error fetching tasks:", error);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadTasks();
-    }, [loadTasks]);
-
-
     // Delete a task
     const handleDeleteTask = useCallback((id: number) => {
-        setTasks((prev) => prev.filter((task) => task.id !== id));
-        deleteTodo(id)
-    }, []);
-
-    // Load in-progress tasks from local storage when component mounts
-    useEffect(() => {
-        const inProgressTasks = getStoredTasks();
-        setTasks((prevTasks) => {
-            const updatedTasks = prevTasks.map((task) =>
-                task.status === "in-progress"
-                    ? inProgressTasks.find((t) => t.id === task.id) || task
-                    : task
-            );
-            return updatedTasks;
-        });
-    }, []);
-
-    // Save tasks to localStorage
-    const saveTasksToLocalStorage = (updatedTasks: any) => {
-        localStorage.setItem("tasks", JSON.stringify(updatedTasks));
-    };
-
-
-    // Update localStorage whenever tasks change
-    useEffect(() => {
-        saveTasksToLocalStorage(tasks);
-    }, [tasks]);
-
+        deleteTask(id);
+    }, [deleteTask]);
 
     // Edit task content
     const handleEditTask = useCallback((task: Task, newContent: string) => {
-        setTasks((prev) =>
-            prev.map((t) => (t.id === task.id ? { ...t, todo: newContent } : t))
-        );
-        updateTodo(task.id, task.completed, newContent);
-    }, []);
+        editTask(task.id, newContent);
+    }, [editTask]);
 
     // Handle drag-and-drop
     const onDragEnd = useCallback((result: DropResult) => {
         const { source, destination } = result;
         if (!destination) return;
-        setTasks((prev) =>
-            prev.map((task) =>
-                task.id.toString() === result.draggableId
-                    ? { ...task, status: destination.droppableId as Task["status"], completed: destination.droppableId === "done" }
-                    : task
-            )
-        );
 
-        // Call updateTodo separately to avoid side effects inside map
-        const updatedTask = tasks.find((task) => task.id.toString() === result.draggableId);
-        if (updatedTask && destination.droppableId === "done") {
-            updateTodo(updatedTask.id, true, updatedTask.todo);
-        }
-    }, [tasks]);
+        updateTaskStatus(parseInt(result.draggableId), destination.droppableId as Task["status"]);
+    }, [updateTaskStatus]);
 
     // Calculate total pages per column
     const totalPages = useMemo(
@@ -173,7 +105,7 @@ const KanbanBoard = () => {
 
             {/* Add Task Input */}
             <Box mb={7}>
-                <AddTodo onAddTask={saveTasksToLocalStorage} />
+                <AddTodo onAddTask={addTask} /> {/* Add task using context */}
             </Box>
 
             <DragDropContext onDragEnd={onDragEnd}>
