@@ -118,7 +118,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ totalPages, status, tasks, 
                     }
                 }}
             >
-                <DialogTitle>Edit Task</DialogTitle>
+                <DialogTitle>Edit Task : {selectedTask?.todo}</DialogTitle>
                 <DialogContent>
                     <TextField
                         autoFocus

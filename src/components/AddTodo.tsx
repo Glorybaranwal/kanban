@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, TextField } from "@mui/material";
+import { Button, Grid, TextField, Tooltip } from "@mui/material";
 import { useTasks } from "@components/context/task"; // Import useTasks hook
 import { Task } from "@components/types/todo";
 
@@ -20,15 +20,27 @@ const AddTodo: React.FC<AddTodoProps> = ({ onAddTask }) => { // Use the interfac
     };
 
     return (
-        <div>
-            <TextField
-                label="New Task"
-                variant="outlined"
-                value={todoContent}
-                onChange={(e) => setTodoContent(e.target.value)}
-            />
-            <Button onClick={handleAdd} variant="contained">Add</Button>
-        </div>
+
+
+        <Grid container spacing={2} alignItems="center">
+            <Grid item xs={9.4}>
+                <TextField
+                    label="New Task"
+                    value={todoContent}
+                    onChange={(e) => setTodoContent(e.target.value)}
+                    fullWidth
+                />
+            </Grid>
+            <Grid item xs={1.5}>
+                <Tooltip title={todoContent ? "Add Task" : "Add Task Name to Add Task"}>
+                    <span>
+                        <Button disabled={!todoContent} onClick={handleAdd} variant="outlined" sx={{ padding: '0.8rem' }} fullWidth>
+                            Add Task
+                        </Button>
+                    </span>
+                </Tooltip>
+            </Grid>
+        </Grid>
     );
 };
 

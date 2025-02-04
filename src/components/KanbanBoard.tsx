@@ -25,7 +25,7 @@ const KanbanBoard = () => {
         done: 0,
     });
 
-    const [pageSize, setPageSize] = useState<number>(5);
+    const [pageSize, setPageSize] = useState<number>(10);
 
     // Delete a task
     const handleDeleteTask = useCallback((id: number) => {
@@ -48,9 +48,9 @@ const KanbanBoard = () => {
     // Calculate total pages per column
     const totalPages = useMemo(
         () => ({
-            todo: Math.ceil(tasks.filter((task) => task.status === "todo").length / pageSize),
+            todo: Math.ceil(tasks.filter((task) => task.status ? task.status === "todo" : task.completed === false).length / pageSize),
             "in-progress": Math.ceil(tasks.filter((task) => task.status === "in-progress").length / pageSize),
-            done: Math.ceil(tasks.filter((task) => task.status === "done").length / pageSize),
+            done: Math.ceil(tasks.filter((task) => task.completed === false).length / pageSize),
         }),
         [tasks, pageSize]
     );
@@ -72,9 +72,9 @@ const KanbanBoard = () => {
     // Paginate tasks
     const paginatedTasks = useMemo(() => {
         const filteredTasks = {
-            todo: tasks.filter((task) => task.status === "todo"),
+            todo: tasks.filter((task) => task.status ? task.status === "todo" : task.completed === false),
             "in-progress": tasks.filter((task) => task.status === "in-progress"),
-            done: tasks.filter((task) => task.status === "done"),
+            done: tasks.filter((task) => task.status ? task.status === "done" : task.completed === true),
         };
 
         return {
@@ -94,14 +94,14 @@ const KanbanBoard = () => {
             </Typography>
 
             {/* Page Size Selection */}
-            <FormControl sx={{ minWidth: 120, marginBottom: "10px" }}>
+            {/* <FormControl sx={{ minWidth: 120, marginBottom: "10px" }}>
                 <Select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
                     <MenuItem value="" disabled>Page Size</MenuItem>
                     <MenuItem value={5}>5</MenuItem>
                     <MenuItem value={10}>10</MenuItem>
                     <MenuItem value={20}>20</MenuItem>
                 </Select>
-            </FormControl>
+            </FormControl> */}
 
             {/* Add Task Input */}
             <Box mb={7}>
