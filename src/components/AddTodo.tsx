@@ -2,15 +2,8 @@ import { useState } from "react";
 import { TextField, Button, Grid } from "@mui/material";
 import { addTodo } from "@components/utils/api";
 
-interface Task {
-    id: number;
-    todo: string;
-    completed: boolean;
-    status: "todo" | "in-progress" | "done";
-}
-
 interface AddTodoProps {
-    onAddTask: (task: Task) => void;
+    onAddTask: (task: { id: number; todo: string; completed: boolean; status: "todo" | "in-progress" | "done" }) => void;
 }
 
 const AddTodo: React.FC<AddTodoProps> = ({ onAddTask }) => {
@@ -18,14 +11,15 @@ const AddTodo: React.FC<AddTodoProps> = ({ onAddTask }) => {
 
     const handleAdd = () => {
         if (newTodo.trim()) {
-            const newTaskObj: Task = {
+            const newTaskObj: any = {
                 id: Date.now(),
                 todo: newTodo,
                 completed: false,
                 status: "todo",
             };
-            addTodo(newTaskObj);
+
             onAddTask(newTaskObj);
+            addTodo(newTaskObj);
             setNewTodo("");
         }
     };

@@ -1,12 +1,6 @@
-import React, { createContext, useState, useEffect, useContext } from "react";
-import { fetchTodos, addTodo, updateTodo, deleteTodo } from "@components/utils/api";
-
-interface Task {
-    id: number;
-    todo: string;
-    completed: boolean;
-    status: "todo" | "in-progress" | "done";
-}
+import { createContext, useContext, useState, useEffect } from "react";
+import { fetchTodos, updateTodo, deleteTodo } from "@components/utils/api";
+import { Task } from "../types/todo";
 
 interface TaskContextType {
     tasks: Task[];
@@ -16,22 +10,22 @@ interface TaskContextType {
     updateTaskStatus: (id: number, status: Task["status"]) => void;
 }
 
-// Create Context
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
-// Context Provider Component
+export const useTasks = () => {
+    const context = useContext(TaskContext);
+    if (!context) throw new Error("useTasks must be used within TaskProvider");
+    return context;
+};
+
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [tasks, setTasks] = useState<Task[]>([]);
 
-    // Fetch tasks from API on mount
     useEffect(() => {
         const loadTasks = async () => {
             try {
-                const fetchedTasks = await fetchTodos();
-                setTasks(fetchedTasks.map((task) => ({
-                    ...task,
-                    status: task.completed ? "done" : "todo",
-                })));
+                const fetchedTasks: any = await fetchTodos();
+                setTasks(fetchedTasks);
             } catch (error) {
                 console.error("Error fetching tasks:", error);
             }
@@ -39,13 +33,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loadTasks();
     }, []);
 
-    // Add a task
-    const addTask = (newTask: Task) => {
-        setTasks((prev) => [...prev, newTask]);
-        addTodo(newTask); // API call
+    // Add a new task to the correct column
+    const addTask = (task: Task) => {
+        setTasks((prev) => [...prev, task]);
     };
 
-    // Edit a task
+    // Edit task
     const editTask = (id: number, newContent: string) => {
         setTasks((prev) =>
             prev.map((task) => (task.id === id ? { ...task, todo: newContent } : task))
@@ -53,20 +46,18 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateTodo(id, false, newContent);
     };
 
-    // Delete a task
+    // Delete task
     const deleteTask = (id: number) => {
         setTasks((prev) => prev.filter((task) => task.id !== id));
         deleteTodo(id);
     };
 
-    // Update task status (for drag & drop)
+    // Update task status on drag
     const updateTaskStatus = (id: number, status: Task["status"]) => {
         setTasks((prev) =>
-            prev.map((task) =>
-                task.id === id ? { ...task, status, completed: status === "done" } : task
-            )
+            prev.map((task) => (task.id === id ? { ...task, status } : task))
         );
-        updateTodo(id, status === "done", tasks.find((task) => task.id === id)?.todo || "");
+        updateTodo(id, status === "done", "");
     };
 
     return (
@@ -74,13 +65,4 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             {children}
         </TaskContext.Provider>
     );
-};
-
-// Custom Hook for using TaskContext
-export const useTasks = () => {
-    const context = useContext(TaskContext);
-    if (!context) {
-        throw new Error("useTasks must be used within a TaskProvider");
-    }
-    return context;
 };

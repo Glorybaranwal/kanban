@@ -13,9 +13,9 @@ import {
     Box,
 } from "@mui/material";
 import KanbanColumn from "./Column";
-import { addTodo, deleteTodo, fetchTodos, updateTodo } from "@components/utils/api";
+import { deleteTodo, fetchTodos, updateTodo } from "@components/utils/api";
 import AddTodo from "./AddTodo";
-import { Todo, Task } from '../types/todo';
+import { Task } from '../types/todo';
 
 const getStoredTasks = (): Task[] => {
     const storedTasks = localStorage.getItem("inProgressTasks");
