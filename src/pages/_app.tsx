@@ -2,6 +2,7 @@ import { ThemeProvider, CssBaseline, IconButton } from '@mui/material';
 import { useState } from 'react';
 import { lightTheme, darkTheme } from '@components/theme/theme';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
+import { TaskProvider } from '@components/context/task';
 
 const MyApp = ({ Component, pageProps }: any) => {
   // State to toggle between light and dark themes
@@ -19,7 +20,9 @@ const MyApp = ({ Component, pageProps }: any) => {
           {themeMode === 'light' ? <Brightness4 /> : <Brightness7 />}
         </IconButton>
       </div>
-      <Component {...pageProps} />
+      <TaskProvider>
+        <Component {...pageProps} />
+      </TaskProvider>
     </ThemeProvider>
   );
 };

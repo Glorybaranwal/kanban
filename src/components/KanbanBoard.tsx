@@ -13,18 +13,17 @@ import {
     Box,
 } from "@mui/material";
 import KanbanColumn from "./Column";
-import { addTodo, fetchTodos } from "@components/utils/api";
+import { addTodo, deleteTodo, fetchTodos, updateTodo } from "@components/utils/api";
+import AddTodo from "./AddTodo";
+import { Todo, Task } from '../types/todo';
 
-interface Task {
-    id: number;
-    todo: string;
-    completed: boolean;
-    status: "todo" | "in-progress" | "done";
-}
+const getStoredTasks = (): Task[] => {
+    const storedTasks = localStorage.getItem("inProgressTasks");
+    return storedTasks ? JSON.parse(storedTasks) : [];
+};
 
 const KanbanBoard = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [newTask, setNewTask] = useState<string>("");
     const [pagination, setPagination] = useState<{ [key: string]: number }>({
         todo: 0,
         "in-progress": 0,
@@ -32,23 +31,22 @@ const KanbanBoard = () => {
     });
 
     const [pageSize, setPageSize] = useState<number>(5);
-    const [loading, setLoading] = useState(false);
 
     // Fetch tasks dynamically
     const loadTasks = useCallback(async () => {
-        setLoading(true);
         try {
             const fetchedTasks = await fetchTodos();
-            setTasks(
-                fetchedTasks.map((task) => ({
-                    ...task,
-                    status: task.completed ? "done" : "todo",
-                }))
-            );
+            const inProgressTasks = getStoredTasks();
+
+            // Merge API tasks with stored in-progress tasks
+            const mergedTasks: any = fetchedTasks.map((task) => {
+                const storedTask = inProgressTasks.find((t) => t.id === task.id);
+                return storedTask ? storedTask : { ...task, status: task.completed ? "done" : "todo" };
+            });
+
+            setTasks(mergedTasks);
         } catch (error) {
             console.error("Error fetching tasks:", error);
-        } finally {
-            setLoading(false);
         }
     }, []);
 
@@ -56,40 +54,50 @@ const KanbanBoard = () => {
         loadTasks();
     }, [loadTasks]);
 
-    // Add new task
-    const handleAddTask = useCallback(() => {
-        if (!newTask.trim()) return;
-
-        const newTaskObj: Task = {
-            id: Date.now(),
-            todo: newTask,
-            completed: false,
-            status: "todo",
-        };
-
-        setTasks((prev) => [...prev, newTaskObj]);
-        addTodo(newTask);
-
-        setNewTask("");
-    }, [newTask]);
 
     // Delete a task
     const handleDeleteTask = useCallback((id: number) => {
         setTasks((prev) => prev.filter((task) => task.id !== id));
+        deleteTodo(id)
     }, []);
 
+    // Load in-progress tasks from local storage when component mounts
+    useEffect(() => {
+        const inProgressTasks = getStoredTasks();
+        setTasks((prevTasks) => {
+            const updatedTasks = prevTasks.map((task) =>
+                task.status === "in-progress"
+                    ? inProgressTasks.find((t) => t.id === task.id) || task
+                    : task
+            );
+            return updatedTasks;
+        });
+    }, []);
+
+    // Save tasks to localStorage
+    const saveTasksToLocalStorage = (updatedTasks: any) => {
+        localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+    };
+
+
+    // Update localStorage whenever tasks change
+    useEffect(() => {
+        saveTasksToLocalStorage(tasks);
+    }, [tasks]);
+
+
     // Edit task content
-    const handleEditTask = useCallback((id: number, newContent: string) => {
+    const handleEditTask = useCallback((task: Task, newContent: string) => {
         setTasks((prev) =>
-            prev.map((task) => (task.id === id ? { ...task, todo: newContent } : task))
+            prev.map((t) => (t.id === task.id ? { ...t, todo: newContent } : t))
         );
+        updateTodo(task.id, task.completed, newContent);
     }, []);
 
     // Handle drag-and-drop
     const onDragEnd = useCallback((result: DropResult) => {
         const { source, destination } = result;
         if (!destination) return;
-
         setTasks((prev) =>
             prev.map((task) =>
                 task.id.toString() === result.draggableId
@@ -97,7 +105,13 @@ const KanbanBoard = () => {
                     : task
             )
         );
-    }, []);
+
+        // Call updateTodo separately to avoid side effects inside map
+        const updatedTask = tasks.find((task) => task.id.toString() === result.draggableId);
+        if (updatedTask && destination.droppableId === "done") {
+            updateTodo(updatedTask.id, true, updatedTask.todo);
+        }
+    }, [tasks]);
 
     // Calculate total pages per column
     const totalPages = useMemo(
@@ -159,21 +173,7 @@ const KanbanBoard = () => {
 
             {/* Add Task Input */}
             <Box mb={7}>
-                <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={10}>
-                        <TextField
-                            label="New Task"
-                            value={newTask}
-                            onChange={(e) => setNewTask(e.target.value)}
-                            fullWidth
-                        />
-                    </Grid>
-                    <Grid item xs={1.5}>
-                        <Button onClick={handleAddTask} variant="contained" fullWidth>
-                            Add Task
-                        </Button>
-                    </Grid>
-                </Grid>
+                <AddTodo onAddTask={saveTasksToLocalStorage} />
             </Box>
 
             <DragDropContext onDragEnd={onDragEnd}>

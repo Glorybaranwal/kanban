@@ -1,33 +1,51 @@
-import { useState } from 'react';
-import { TextField, Button } from '@mui/material';
+import { useState } from "react";
+import { TextField, Button, Grid } from "@mui/material";
+import { addTodo } from "@components/utils/api";
 
-interface AddTodoProps {
-    onAdd: (todo: string) => void;
+interface Task {
+    id: number;
+    todo: string;
+    completed: boolean;
+    status: "todo" | "in-progress" | "done";
 }
 
-const AddTodo: React.FC<AddTodoProps> = ({ onAdd }) => {
-    const [newTodo, setNewTodo] = useState('');
+interface AddTodoProps {
+    onAddTask: (task: Task) => void;
+}
+
+const AddTodo: React.FC<AddTodoProps> = ({ onAddTask }) => {
+    const [newTodo, setNewTodo] = useState("");
 
     const handleAdd = () => {
         if (newTodo.trim()) {
-            onAdd(newTodo);
-            setNewTodo('');
+            const newTaskObj: Task = {
+                id: Date.now(),
+                todo: newTodo,
+                completed: false,
+                status: "todo",
+            };
+            addTodo(newTaskObj);
+            onAddTask(newTaskObj);
+            setNewTodo("");
         }
     };
 
     return (
-        <>
-            <TextField
-                label="New Todo"
-                variant="outlined"
-                fullWidth
-                value={newTodo}
-                onChange={(e) => setNewTodo(e.target.value)}
-            />
-            <Button variant="contained" color="primary" onClick={handleAdd}>
-                Add Todo
-            </Button>
-        </>
+        <Grid container spacing={2} alignItems="center">
+            <Grid item xs={10}>
+                <TextField
+                    label="New Task"
+                    value={newTodo}
+                    onChange={(e) => setNewTodo(e.target.value)}
+                    fullWidth
+                />
+            </Grid>
+            <Grid item xs={2}>
+                <Button onClick={handleAdd} variant="contained" fullWidth>
+                    Add Task
+                </Button>
+            </Grid>
+        </Grid>
     );
 };
 
