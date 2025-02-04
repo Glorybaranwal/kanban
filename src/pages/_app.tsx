@@ -1,6 +1,27 @@
-import "@components/styles/globals.css";
-import type { AppProps } from "next/app";
+import { ThemeProvider, CssBaseline, IconButton } from '@mui/material';
+import { useState } from 'react';
+import { lightTheme, darkTheme } from '@components/theme/theme';
+import { Brightness4, Brightness7 } from '@mui/icons-material';
 
-export default function App({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />;
-}
+const MyApp = ({ Component, pageProps }: any) => {
+  // State to toggle between light and dark themes
+  const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
+
+  const toggleTheme = () => {
+    setThemeMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
+  };
+
+  return (
+    <ThemeProvider theme={themeMode === 'light' ? lightTheme : darkTheme}>
+      <CssBaseline /> {/* Reset CSS to match theme */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: 10 }}>
+        <IconButton color="inherit" onClick={toggleTheme}>
+          {themeMode === 'light' ? <Brightness4 /> : <Brightness7 />}
+        </IconButton>
+      </div>
+      <Component {...pageProps} />
+    </ThemeProvider>
+  );
+};
+
+export default MyApp;
